@@ -1,0 +1,27 @@
+export default {
+  async fetch(request) {
+    const url = new URL(request.url);
+    const target = url.searchParams.get('url');
+    if (!target) return new Response('Missing url param', { status: 400 });
+
+    const headers = new Headers(request.headers);
+    headers.delete('cf-connecting-ip');
+    headers.delete('x-forwarded-for');
+    headers.delete('cf-ray');
+
+    const body = request.method === 'GET' || request.method === 'HEAD' ? null : await request.arrayBuffer();
+
+    const resp = await fetch(target, {
+      method: request.method,
+      headers,
+      body,
+      redirect: 'follow',
+    });
+
+    return new Response(resp.body, {
+      status: resp.status,
+      statusText: resp.statusText,
+      headers: resp.headers,
+    });
+  }
+};
